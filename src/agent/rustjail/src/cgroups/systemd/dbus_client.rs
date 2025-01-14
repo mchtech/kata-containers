@@ -154,13 +154,14 @@ impl SystemdInterface for DBusClient {
     fn add_process(&self, pid: i32) -> Result<()> {
         let proxy = self.build_proxy()?;
 
-        proxy
-            .attach_processes_to_unit(&self.unit_name, "/", &[pid as u32])
-            .context(format!(
-                "failed to add process into unit {}",
-                self.unit_name
-            ))?;
-
-        Ok(())
+        match proxy.attach_processes_to_unit(&self.unit_name, "/", &[pid as u32]) {
+            Ok(_) => Ok(()),
+            Err(_e) => proxy
+                .attach_processes_to_unit(&self.unit_name, "/init.scope", &[pid as u32])
+                .context(format!(
+                    "failed to add process into unit {} or {}{}",
+                    self.unit_name, self.unit_name, "/init.scope"
+                )),
+        }
     }
 }

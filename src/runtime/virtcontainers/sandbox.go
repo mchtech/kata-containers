@@ -2540,16 +2540,14 @@ func (s *Sandbox) resourceControllerDelete() error {
 		return nil
 	}
 
-	sandboxController, err := resCtrl.LoadResourceController(s.state.SandboxCgroupPath, s.config.SandboxCgroupOnly)
+	sandboxController, err := resCtrl.LoadResourceController(s.state.SandboxCgroupPath)
 	if err != nil {
 		return err
 	}
 
 	resCtrlParent := sandboxController.Parent()
-	if resCtrlParent != "." {
-		if err := sandboxController.MoveTo(resCtrlParent); err != nil {
-			return err
-		}
+	if err := sandboxController.MoveTo(resCtrlParent); err != nil {
+		return err
 	}
 
 	if err := sandboxController.Delete(); err != nil {
@@ -2557,7 +2555,7 @@ func (s *Sandbox) resourceControllerDelete() error {
 	}
 
 	if s.state.OverheadCgroupPath != "" {
-		overheadController, err := resCtrl.LoadResourceController(s.state.OverheadCgroupPath, s.config.SandboxCgroupOnly)
+		overheadController, err := resCtrl.LoadResourceController(s.state.OverheadCgroupPath)
 		if err != nil {
 			return err
 		}

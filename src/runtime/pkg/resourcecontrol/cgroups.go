@@ -41,11 +41,10 @@ func RenameCgroupPath(path string) (string, error) {
 }
 
 type LinuxCgroup struct {
-	cgroup            interface{}
-	path              string
-	cpusets           *specs.LinuxCPU
-	devices           []specs.LinuxDeviceCgroup
-	sandboxCgroupOnly bool
+	cgroup  interface{}
+	path    string
+	cpusets *specs.LinuxCPU
+	devices []specs.LinuxDeviceCgroup
 
 	sync.Mutex
 }
@@ -227,7 +226,7 @@ func NewSandboxResourceController(path string, resources *specs.LinuxResources, 
 	}, nil
 }
 
-func LoadResourceController(path string, sandboxCgroupOnly bool) (ResourceController, error) {
+func LoadResourceController(path string) (ResourceController, error) {
 	var err error
 	var cgroup interface{}
 
@@ -243,7 +242,7 @@ func LoadResourceController(path string, sandboxCgroupOnly bool) (ResourceContro
 			return nil, err
 		}
 	} else if cgroups.Mode() == cgroups.Unified {
-		if IsSystemdCgroup(path) && sandboxCgroupOnly {
+		if IsSystemdCgroup(path) {
 			slice, unit, err := getSliceAndUnit(path)
 			if err != nil {
 				return nil, err
@@ -263,9 +262,8 @@ func LoadResourceController(path string, sandboxCgroupOnly bool) (ResourceContro
 	}
 
 	return &LinuxCgroup{
-		sandboxCgroupOnly: sandboxCgroupOnly,
-		path:              path,
-		cgroup:            cgroup,
+		path:   path,
+		cgroup: cgroup,
 	}, nil
 }
 
@@ -278,7 +276,7 @@ func (c *LinuxCgroup) Delete() error {
 	case cgroups.Cgroup:
 		return cg.Delete()
 	case *cgroupsv2.Manager:
-		if IsSystemdCgroup(c.ID()) && c.sandboxCgroupOnly {
+		if IsSystemdCgroup(c.ID()) {
 			if err := cg.DeleteSystemd(); err != nil {
 				return err
 			}
